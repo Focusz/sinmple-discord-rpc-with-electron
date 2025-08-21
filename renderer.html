@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Discord RPC UI</title>
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          sans-serif;
+        margin: 16px;
+      }
+      label {
+        display: block;
+        margin: 10px 0 4px;
+        font-weight: 600;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #d0d0d0;
+        border-radius: 8px;
+      }
+      textarea {
+        min-height: 84px;
+        resize: vertical;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .btns {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      button {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #f5f5f5;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #e9f2ff;
+        border-color: #9cc3ff;
+      }
+      .status {
+        margin-top: 10px;
+        font-size: 12px;
+        white-space: pre-line;
+      }
+      .card {
+        border: 1px solid #e6e6e6;
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 12px;
+      }
+      .hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Discord RPC UI</h2>
+
+    <div class="card">
+      <div id="bridge" class="status">Checking preload bridge…</div>
+
+      <label>Client ID (Application ID)</label>
+      <input
+        id="clientId"
+        type="text"
+        placeholder="123456789012345678"
+        autocomplete="off"
+      />
+
+      <label>Details (หลายข้อความได้)</label>
+      <textarea
+        id="details"
+        placeholder="เช่น:
+Listening to Lo-Fi
+Listening to Chillhop
+หรือใช้ | คั่น เช่น: Listening A | Listening B"
+      ></textarea>
+      <div class="hint">
+        Discord รีเฟรช UI ~ทุก 15 วิ แนะนำตั้งรอบสลับ ≥ 15 วิ
+      </div>
+
+      <label>State (หลายข้อความได้)</label>
+      <textarea
+        id="state"
+        placeholder="เช่น:
+by Artist A 🎧
+by Artist B 🎧
+หรือใช้ | คั่น"
+      ></textarea>
+
+      <div class="row">
+        <div>
+          <label>Large Image Key</label>
+          <input
+            id="largeImageKey"
+            type="text"
+            placeholder="banner"
+            autocomplete="off"
+          />
+        </div>
+        <div>
+          <label>Large Image Text</label>
+          <input
+            id="largeImageText"
+            type="text"
+            placeholder="Album · 3:00"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Small Image Key</label>
+          <input
+            id="smallImageKey"
+            type="text"
+            placeholder="headphones"
+            autocomplete="off"
+          />
+        </div>
+        <div>
+          <label>Small Image Text</label>
+          <input
+            id="smallImageText"
+            type="text"
+            placeholder="Now Playing"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div style="margin-top: 8px">
+        <label
+          ><input id="showTimer" type="checkbox" checked /> Show
+          elapsed/progress (ใช้กับ Duration เพื่อให้มีหลอด)</label
+        >
+      </div>
+
+      <div class="row" style="margin-top: 6px">
+        <div>
+          <label>Duration (seconds) – สำหรับ “หลอด”</label>
+          <input id="durationSec" type="text" placeholder="180" />
+        </div>
+        <div>
+          <label>Rotate every (seconds)</label>
+          <input id="rotateSec" type="text" placeholder="15" />
+        </div>
+      </div>
+
+      <div style="margin-top: 6px">
+        <label><input id="runAtLogin" type="checkbox" /> Run at login</label>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnSet">Set Presence</button>
+        <button id="btnClear">Clear</button>
+        <button id="btnSave">Save</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id)
+      const show = (msg, ok) =>
+        ($("status").textContent =
+          (ok === true ? "✅ " : "") + (ok === false ? "❌ " : "") + msg)
+
+      // ตรวจ preload bridge
+      if (window.rpcApi && typeof window.rpcApi.loadConfig === "function") {
+        $("bridge").textContent = "Preload bridge: OK"
+      } else {
+        $("bridge").textContent =
+          "Preload bridge: FAILED (window.rpcApi missing). ตรวจ path preload ใน main.js"
+      }
+
+      function gather() {
+        return {
+          clientId: $("clientId").value.trim(),
+          details: $("details").value, // ปล่อยเป็นข้อความหลายบรรทัด ให้ main.js ไป split เอง
+          state: $("state").value,
+          largeImageKey: $("largeImageKey").value.trim(),
+          largeImageText: $("largeImageText").value,
+          smallImageKey: $("smallImageKey").value.trim(),
+          smallImageText: $("smallImageText").value,
+          showTimer: $("showTimer").checked,
+          durationSec: Number(($("durationSec").value || "0").trim()),
+          rotateSec: Number(($("rotateSec").value || "15").trim()),
+          runAtLogin: $("runAtLogin").checked,
+        }
+      }
+
+      async function load() {
+        try {
+          const cfg = await window.rpcApi?.loadConfig?.()
+          if (!cfg) {
+            $("status").textContent = "No config loaded"
+            return
+          }
+          $("clientId").value = cfg.clientId || ""
+          $("details").value = cfg.details || ""
+          $("state").value = cfg.state || ""
+          $("largeImageKey").value = cfg.largeImageKey || ""
+          $("largeImageText").value = cfg.largeImageText || ""
+          $("smallImageKey").value = cfg.smallImageKey || ""
+          $("smallImageText").value = cfg.smallImageText || ""
+          $("showTimer").checked = !!cfg.showTimer
+          $("durationSec").value = (cfg.durationSec ?? "") + ""
+          $("rotateSec").value = (cfg.rotateSec ?? "15") + ""
+          $("runAtLogin").checked = !!cfg.runAtLogin
+        } catch (e) {
+          show("Error loading config: " + (e.message || e), false)
+        }
+      }
+
+      $("btnSet").addEventListener("click", async () => {
+        const cfg = gather()
+        if (!cfg.clientId) return show("Client ID is required", false)
+        show("Setting presence…")
+        try {
+          await window.rpcApi?.setPresence?.(cfg)
+          show("Presence command sent (Discord อาจรีเฟรชช้าสุด ~15s)")
+        } catch (e) {
+          show("Set failed: " + (e.message || e), false)
+        }
+      })
+
+      $("btnClear").addEventListener("click", async () => {
+        show("Clearing…")
+        try {
+          await window.rpcApi?.clearPresence?.()
+          show("Cleared.", true)
+        } catch (e) {
+          show("Clear failed: " + (e.message || e), false)
+        }
+      })
+
+      $("btnSave").addEventListener("click", async () => {
+        const cfg = gather()
+        try {
+          const res = await window.rpcApi?.saveConfig?.(cfg)
+          if (res?.ok) show("Saved!", true)
+        } catch (e) {
+          show("Save failed: " + (e.message || e), false)
+        }
+      })
+
+      window.rpcApi?.onStatus?.((data) => {
+        show(data.msg, data.ok)
+      })
+
+      load()
+    </script>
+  </body>
+</html>

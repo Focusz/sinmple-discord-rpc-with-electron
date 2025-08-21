@@ -1,0 +1,46 @@
+{
+  "name": "discord-rpc-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lightweight Electron app to control Discord Rich Presence via UI",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.yourname.discordrpcui",
+    "productName": "Discord RPC UI",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.html",
+      "rpc.js",
+      "icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "preload.js",
+        "to": "preload.js"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "artifactName": "DiscordRPC-Setup-${version}.exe"
+    }
+  },
+  "dependencies": {
+    "discord-rpc": "^4.0.1"
+  },
+  "devDependencies": {
+    "electron-builder": "^26.0.12",
+    "electron": "^31.0.0"
+  }
+}
